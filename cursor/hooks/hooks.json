@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "subagentStop": [
+      {
+        "command": "python3.11 cursor/hooks/gate.py",
+        "timeout": 60,
+        "loop_limit": 1
+      }
+    ]
+  }
+}

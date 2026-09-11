@@ -1,0 +1,28 @@
+shell:
+  allow_binaries:
+    - python
+    - python3
+    - pytest
+    - npm
+    - npx
+    - pnpm
+    - yarn
+    - cargo
+    - go
+    - git
+    - node
+    - ruff
+    - mypy
+  block_tokens:
+    - sudo
+    - rm
+    - chmod
+    - chown
+    - ssh
+    - docker
+    - curl
+    - wget
+    - nc
+    - ncat
+    - scp
+    - dd

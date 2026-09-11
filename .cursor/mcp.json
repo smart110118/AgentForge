@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "local-agent": {
+      "command": "python3.11",
+      "args": ["-m", "local_agent.mcp.server"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}
