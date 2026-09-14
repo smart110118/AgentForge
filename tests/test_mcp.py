@@ -10,6 +10,7 @@ class McpTest(unittest.TestCase):
     def test_initialize_and_tools(self):
         init = _handle({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
         self.assertEqual(init["result"]["serverInfo"]["name"], "local-agent")
+        self.assertTrue(init["result"]["capabilities"]["tools"]["listChanged"])
         listed = _handle({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         names = [t["name"] for t in listed["result"]["tools"]]
         self.assertEqual(names, [t["name"] for t in TOOL_LIST])

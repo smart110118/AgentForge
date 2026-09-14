@@ -1,7 +1,9 @@
 models:
   qwen-coder:
     provider: openai-compatible
-    endpoint: http://127.0.0.1:8000/v1
-    model: qwen3-coder
+    api: responses
+    endpoint: http://192.168.7.182:18080/v1
+    model: DeepSeek-V4-Pro-Qwen3.5-9B
+    n_ctx: 65536
     role:
       - executor

@@ -1,0 +1,17 @@
+services:
+  agent:
+    build: .
+    image: agentforge:latest
+    stdin_open: true
+    environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-local}
+      LOCAL_AGENT_API: ${LOCAL_AGENT_API:-}
+      LOCAL_AGENT_ENDPOINT: ${LOCAL_AGENT_ENDPOINT:-http://192.168.7.182:18080/v1}
+      LOCAL_AGENT_MODEL: ${LOCAL_AGENT_MODEL:-DeepSeek-V4-Pro-Qwen3.5-9B}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      XAI_BASE_URL: ${XAI_BASE_URL:-}
+      XAI_MODEL: ${XAI_MODEL:-}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}

@@ -6,6 +6,12 @@ from local_agent.models.openai_compatible import OpenAICompatibleClient
 
 def qwen_client(cfg: dict | None = None) -> OpenAICompatibleClient:
     cfg = cfg or load_config()
-    spec = cfg["models"]["qwen-coder"]
+    spec = cfg.get("executor") or cfg["models"]["qwen-coder"]
     timeout = float(cfg.get("agent", {}).get("timeout_seconds") or 180)
-    return OpenAICompatibleClient(spec["endpoint"], spec["model"], timeout=timeout)
+    return OpenAICompatibleClient(
+        spec["endpoint"],
+        spec["model"],
+        timeout=timeout,
+        api=str(spec.get("api") or "responses"),
+        api_key=str(spec.get("api_key") or ""),
+    )

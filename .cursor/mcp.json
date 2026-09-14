@@ -1,9 +1,13 @@
 {
   "mcpServers": {
     "local-agent": {
-      "command": "python3.11",
-      "args": ["-m", "local_agent.mcp.server"],
-      "cwd": "${workspaceFolder}"
+      "command": "bash",
+      "args": [
+        "/Volumes/RN1T/src/AgentForge/scripts/mcp-docker.sh"
+      ],
+      "env": {
+        "WORKSPACE_FOLDER": "${workspaceFolder}"
+      }
     }
   }
 }

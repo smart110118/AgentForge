@@ -2,7 +2,7 @@ agent:
   max_iterations: 8
   v0_max_iterations: 3
   temperature: 0.2
-  timeout_seconds: 180
+  timeout_seconds: 300
   context_file_limit: 12
   context_file_chars: 8000
   tree_depth: 2

@@ -3,7 +3,7 @@
   "hooks": {
     "subagentStop": [
       {
-        "command": "python3.11 cursor/hooks/gate.py",
+        "command": "/Volumes/RN1T/src/AgentForge/cursor/hooks/gate.py",
         "timeout": 60,
         "loop_limit": 1
       }

@@ -114,8 +114,8 @@ def _read() -> dict[str, Any] | None:
 
 
 def _write(msg: dict[str, Any]) -> None:
-    raw = json.dumps(msg).encode()
-    sys.stdout.buffer.write(f"Content-Length: {len(raw)}\r\n\r\n".encode() + raw)
+    # MCP stdio is newline-delimited JSON (not LSP Content-Length).
+    sys.stdout.buffer.write(json.dumps(msg, ensure_ascii=False).encode() + b"\n")
     sys.stdout.buffer.flush()
 
 
@@ -130,7 +130,7 @@ def _handle(req: dict[str, Any]) -> dict[str, Any] | None:
             "id": mid,
             "result": {
                 "protocolVersion": req.get("params", {}).get("protocolVersion") or "2024-11-05",
-                "capabilities": {"tools": {}},
+                "capabilities": {"tools": {"listChanged": True}},
                 "serverInfo": {"name": "local-agent", "version": "0.1.0"},
             },
         }
@@ -161,6 +161,10 @@ def _handle(req: dict[str, Any]) -> dict[str, Any] | None:
                     "isError": True,
                 },
             }
+    if method in ("resources/list", "resources/templates/list"):
+        return {"jsonrpc": "2.0", "id": mid, "result": {"resources": []}}
+    if method == "prompts/list":
+        return {"jsonrpc": "2.0", "id": mid, "result": {"prompts": []}}
     return {
         "jsonrpc": "2.0",
         "id": mid,

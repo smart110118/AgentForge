@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "local-agent": {
-      "command": "python3.11",
-      "args": ["-m", "local_agent.mcp.server"],
+      "command": "bash",
+      "args": ["scripts/mcp-docker.sh"],
       "cwd": "${workspaceFolder}"
     }
   }
