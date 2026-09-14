@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "local-agent": {
+      "command": "bash",
+      "args": [
+        "/Volumes/RN1T/src/AgentForge/scripts/mcp-docker.sh"
+      ],
+      "env": {
+        "WORKSPACE_FOLDER": "/Volumes/RN1T/src/AgentForge"
+      }
+    }
+  }
+}

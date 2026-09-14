@@ -1,65 +1,33 @@
 #!/usr/bin/env bash
-# One-shot: [2] Gateway image + [1] Cursor files. Does not install the local model.
+# One-shot: [2] Gateway image + [1] online-brain client files. Does not install the executor model.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="${1:-$ROOT}"
 IMAGE="${AGENTFORGE_IMAGE:-agentforge:latest}"
 
-chmod +x "${ROOT}/scripts/"*.sh "${ROOT}/cursor/hooks/gate.py"
+chmod +x "${ROOT}/scripts/"*.sh "${ROOT}/cursor/hooks/gate.py" "${ROOT}/scripts/install_clients.py"
 
-if ! command -v docker >/dev/null 2>&1; then
-  echo "need docker" >&2
-  exit 1
+if [[ "${INSTALL_SKIP_DOCKER:-}" != "1" ]]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "need docker" >&2
+    exit 1
+  fi
+  echo "==> [2] Gateway  docker build -t ${IMAGE}"
+  docker build -t "${IMAGE}" "${ROOT}"
+else
+  echo "==> [2] Gateway  skip docker (INSTALL_SKIP_DOCKER=1)"
 fi
 
-echo "==> [2] Gateway  docker build -t ${IMAGE}"
-docker build -t "${IMAGE}" "${ROOT}"
-
-echo "==> [1] Cursor   install into ${DEST}"
-mkdir -p "${DEST}/.cursor/skills/local-dev" "${DEST}/.cursor/agents"
-cp "${ROOT}/cursor/skills/local-dev/SKILL.md" "${DEST}/.cursor/skills/local-dev/SKILL.md"
-cp "${ROOT}/cursor/agents/local-coder.md" "${DEST}/.cursor/agents/local-coder.md"
-
-ROOT="${ROOT}" DEST="${DEST}" python3 - <<'PY'
-import json, os
-from pathlib import Path
-
-root = Path(os.environ["ROOT"]).resolve()
-dest = Path(os.environ["DEST"]).resolve() / ".cursor"
-dest.mkdir(parents=True, exist_ok=True)
-
-mcp = {
-    "mcpServers": {
-        "local-agent": {
-            "command": "bash",
-            "args": [str(root / "scripts" / "mcp-docker.sh")],
-            "env": {"WORKSPACE_FOLDER": "${workspaceFolder}"},
-        }
-    }
-}
-(dest / "mcp.json").write_text(json.dumps(mcp, indent=2) + "\n")
-
-hooks = {
-    "version": 1,
-    "hooks": {
-        "subagentStop": [
-            {
-                "command": str(root / "cursor" / "hooks" / "gate.py"),
-                "timeout": 60,
-                "loop_limit": 1,
-            }
-        ]
-    },
-}
-(dest / "hooks.json").write_text(json.dumps(hooks, indent=2) + "\n")
-print(f"wrote {dest / 'mcp.json'}")
-print(f"wrote {dest / 'hooks.json'}")
-PY
+echo "==> [1] Clients  install into ${DEST}  (${INSTALL_CLIENTS:-cursor,claude,codex})"
+ROOT="${ROOT}" DEST="${DEST}" python3 "${ROOT}/scripts/install_clients.py"
 
 echo
-echo "安装完成（未部署本地模型）。"
-echo "  [1] Cursor:  打开 ${DEST} → Settings → MCP → 打开 local-agent（绿灯）"
-echo "  [2] Gateway: 镜像 ${IMAGE}，由 Cursor MCP 按需 docker run，不必常驻"
-echo "  [3] 模型:    配置 LOCAL_AGENT_ENDPOINT 后执行 ${ROOT}/scripts/healthcheck.sh"
+echo "安装完成（未部署执行模型）。一个镜像 ${IMAGE}，三个终端共用 mcp-docker.sh。"
+echo "  Cursor:      打开 ${DEST} → Settings → MCP → 打开 local-agent"
+echo "  Claude Code: 在 ${DEST} 运行 claude，批准项目 .mcp.json"
+echo "  Codex:       信任该项目后用 .codex/config.toml；/mcp 可能只列全局，agent 仍能调项目 MCP"
+echo "  Gateway:     由各终端 MCP 按需 docker run，不必常驻"
+echo "  模型:        配置 .env 后执行 ${ROOT}/scripts/healthcheck.sh"
 echo
 echo "装到其他仓库:  ${ROOT}/scripts/install.sh /abs/path/to/your-project"
+echo "只要部分客户端: INSTALL_CLIENTS=cursor,claude ${ROOT}/scripts/install.sh /abs/path"

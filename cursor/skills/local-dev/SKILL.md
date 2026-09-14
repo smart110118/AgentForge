@@ -7,7 +7,7 @@ description: Delegate implementation tasks to the local coding agent.
 
 ## Principle
 
-Cursor is the planner and reviewer.
+The online model (Cursor, Claude Code, or Codex) is the planner and reviewer.
 
 The local coding agent is the implementation executor.
 
@@ -18,6 +18,7 @@ The local coding agent is the implementation executor.
 3. Break the task into atomic implementation units.
 4. Define acceptance criteria.
 5. Delegate implementation to `local-coder` (MCP `local_agent_execute`).
+   If units have a clear order, **one** `local_agent_execute` with `dag` or `specification.dag` (`tasks` + `depends_on`). Do not split into multiple execute calls.
 6. Wait for the result (or poll `local_agent_status` / `local_agent_result`).
 7. Review changed files and test results. Trust test **exit code**, not model prose.
 8. If failed, delegate a correction task via `local_agent_retry`.
@@ -36,6 +37,7 @@ Provide:
 - constraints
 - acceptance criteria
 - test command
+- `dag` / `specification.dag` when more than one ordered unit
 
 ## Completion
 

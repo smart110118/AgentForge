@@ -1,0 +1,8 @@
+[mcp_servers.local-agent]
+command = "bash"
+args = ["/Volumes/RN1T/src/AgentForge/scripts/mcp-docker.sh"]
+startup_timeout_sec = 30
+tool_timeout_sec = 600
+
+[mcp_servers.local-agent.env]
+WORKSPACE_FOLDER = "/Volumes/RN1T/src/AgentForge"
