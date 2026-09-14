@@ -9,6 +9,7 @@ from local_agent.context.manager import build as build_context
 from local_agent.models.qwen import qwen_client
 from local_agent.security.policy import PolicyError
 from local_agent.security.sandbox import SandboxError
+from local_agent.security.sandbox import allowed_by_globs
 from local_agent.tasks.manager import TaskRecord
 from local_agent.tasks.state import TaskStatus
 from local_agent.tools import filesystem, git as git_tools
@@ -226,11 +227,15 @@ def execute_tool(rec: TaskRecord, name: str, args: dict[str, Any]) -> str:
 
 
 def _snapshot(rec: TaskRecord) -> None:
+    written = list(rec.files_changed)
     git_files = git_tools.changed_files(rec.task.workspace)
-    if git_files:
-        rec.files_changed = git_files
-    diff = git_tools.diff(rec.task.workspace)
-    rec.diff_summary = diff[:4000]
+    globs = rec.task.allow
+    if globs:
+        git_ok = [f for f in git_files if allowed_by_globs(f, globs)]
+        rec.files_changed = list(dict.fromkeys(written + git_ok))
+    else:
+        rec.files_changed = written
+    rec.diff_summary = git_tools.diff(rec.task.workspace, rec.files_changed or None)[:4000]
 
 
 def _maybe_gate(rec: TaskRecord) -> dict | None:
@@ -290,13 +295,17 @@ def run_task(rec: TaskRecord, client: Any | None = None) -> TaskRecord:
                 gate = _maybe_gate(rec)
                 _snapshot(rec)
                 if rec.task.test_command:
-                    if gate and gate["ok"]:
+                    if gate and gate["ok"] and rec.files_changed:
                         rec.status = TaskStatus.success
                         rec.summary = rec.summary or content[:500]
                         return rec
-                    extra = (rec.tests or {}).get("output") or "tests failed"
+                    extra = (rec.tests or {}).get("output") or (
+                        "Tests pass but no files changed. Use write_file."
+                        if gate and gate["ok"]
+                        else "tests failed"
+                    )
                     continue
-                if rec.files_changed or rec.summary:
+                if rec.files_changed:
                     rec.status = TaskStatus.success
                     rec.summary = rec.summary or content[:500] or "done"
                     return rec

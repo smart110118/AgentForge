@@ -52,6 +52,41 @@ class RuntimeTest(unittest.TestCase):
             self.assertEqual(rec.status.value, "success")
             self.assertTrue((Path(d) / "hello.py").is_file())
 
+    def test_snapshot_keeps_allow_not_whole_tree(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "noise.py").write_text("n\n")
+            rec = TaskManager().create(
+                {
+                    "task_id": "t-allow",
+                    "workspace": d,
+                    "objective": "add hello()",
+                    "files": {"allow": ["hello.py"]},
+                    "execution": {"max_iterations": 3},
+                }
+            )
+            run_task(rec, client=FakeClient())
+            self.assertEqual(rec.files_changed, ["hello.py"])
+            self.assertNotIn("noise.py", rec.files_changed)
+
+    def test_green_tests_without_writes_is_not_success(self):
+        class Noop:
+            def chat(self, messages, tools=None, temperature=0.2):
+                return {"choices": [{"message": {"content": "already done"}}]}
+
+        with tempfile.TemporaryDirectory() as d:
+            rec = TaskManager().create(
+                {
+                    "task_id": "t-noop",
+                    "workspace": d,
+                    "objective": "implement",
+                    "test": {"command": "python3 -c 'raise SystemExit(0)'"},
+                    "execution": {"max_iterations": 2},
+                }
+            )
+            run_task(rec, client=Noop())
+            self.assertEqual(rec.status.value, "failed")
+            self.assertFalse(rec.files_changed)
+
 
 class McpApiTest(unittest.TestCase):
     def test_schema_via_parse(self):

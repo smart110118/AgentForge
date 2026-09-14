@@ -4,6 +4,7 @@ import threading
 from typing import Any
 
 from local_agent.agent.runtime import run_task
+from local_agent.tasks.dag import dag_spec, run_dag
 from local_agent.tasks.manager import MANAGER, TaskRecord
 from local_agent.tasks.state import TaskStatus
 
@@ -30,6 +31,8 @@ def _public(rec: TaskRecord) -> dict[str, Any]:
 
 
 def execute(payload: dict[str, Any], wait: bool = True) -> dict[str, Any]:
+    if dag_spec(payload):
+        return run_dag(payload)
     rec = MANAGER.create(payload)
     if wait:
         run_task(rec)

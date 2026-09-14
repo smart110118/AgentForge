@@ -17,11 +17,15 @@ def status(workspace: str) -> str:
     return (p.stdout or p.stderr).strip() or "(clean)"
 
 
-def diff(workspace: str) -> str:
-    p = _git(workspace, "diff", "HEAD")
+def diff(workspace: str, paths: list[str] | None = None) -> str:
+    args = ["diff", "HEAD"]
+    if paths:
+        args += ["--", *paths]
+    p = _git(workspace, *args)
     text = p.stdout.strip()
     if not text:
-        p = _git(workspace, "diff")
+        args[0:1] = ["diff"]
+        p = _git(workspace, *args)
         text = p.stdout.strip()
     return text[:20000] or "(no diff)"
 

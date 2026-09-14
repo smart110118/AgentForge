@@ -22,6 +22,7 @@ TOOL_LIST = [
                 "test": {"type": "object"},
                 "execution": {"type": "object"},
                 "specification": {"type": "object"},
+                "dag": {"type": "object"},
                 "wait": {"type": "boolean", "default": True},
             },
             "required": ["workspace", "objective"],
