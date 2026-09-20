@@ -1,7 +1,6 @@
 # Cursor + Local Coding Agent 设计方案
 
-> 目标：使用 Cursor 的在线模型作为 Planner / Reviewer，使用本地 RTX 4080 上的 Qwen3-Coder-30B-A3B-Q4 作为主要代码执行模型，通过 Skills、Subagents、MCP、Hooks 组合形成可开发、可扩展的本地 Coding Agent 平台。
->
+O>
 > 核心思想：**Cloud Brain + Local Executor**。
 
 ---

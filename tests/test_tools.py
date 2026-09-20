@@ -43,7 +43,19 @@ class FsTest(unittest.TestCase):
             patch_file(d, "a.py", "x = 1", "x = 2", ["**/*"])
             self.assertEqual(Path(d, "a.py").read_text(), "x = 2\n")
 
-    def test_allow_glob(self):
+    def test_patch_already_applied_is_noop(self):
+        with tempfile.TemporaryDirectory() as d:
+            write_file(d, "a.py", "x = 2\n", ["**/*"])
+            rel, changed = patch_file(d, "a.py", "x = 1", "x = 2", ["**/*"])
+            self.assertEqual(rel, "a.py")
+            self.assertFalse(changed)
+            self.assertEqual(Path(d, "a.py").read_text(), "x = 2\n")
+
+    def test_patch_missing_old_raises(self):
+        with tempfile.TemporaryDirectory() as d:
+            write_file(d, "a.py", "x = 1\n", ["**/*"])
+            with self.assertRaises(ValueError):
+                patch_file(d, "a.py", "nope", "x = 9", ["**/*"])
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(SandboxError):
                 write_file(d, "other.py", "x", ["src/**"])

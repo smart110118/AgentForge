@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -86,6 +87,79 @@ class RuntimeTest(unittest.TestCase):
             run_task(rec, client=Noop())
             self.assertEqual(rec.status.value, "failed")
             self.assertFalse(rec.files_changed)
+
+
+    def test_preexisting_head_dirt_is_not_success(self):
+        class Noop:
+            def chat(self, messages, tools=None, temperature=0.2):
+                return {"choices": [{"message": {"content": "already done"}}]}
+
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "a.py").write_text("old\n")
+            subprocess.run(["git", "init"], cwd=d, check=True, capture_output=True)
+            subprocess.run(
+                ["git", "-c", "user.email=t@t", "-c", "user.name=t", "add", "a.py"],
+                cwd=d,
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "init"],
+                cwd=d,
+                check=True,
+                capture_output=True,
+            )
+            Path(d, "a.py").write_text("polling\n")
+            rec = TaskManager().create(
+                {
+                    "task_id": "t-dirty",
+                    "workspace": d,
+                    "objective": "add hook, not polling",
+                    "files": {"allow": ["a.py"]},
+                    "execution": {"max_iterations": 2},
+                }
+            )
+            run_task(rec, client=Noop())
+            self.assertEqual(rec.status.value, "failed")
+            self.assertFalse(rec.files_changed)
+            self.assertEqual(rec.diff_summary, "(no diff)")
+
+    def test_replay_same_patch_stalls_before_max_iter(self):
+        class Replay:
+            def chat(self, messages, tools=None, temperature=0.2):
+                body = {"name": "patch_file", "path": "a.py", "old": "old\n", "new": "polling\n"}
+                return {"choices": [{"message": {"content": json.dumps(body)}}]}
+
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "a.py").write_text("old\n")
+            subprocess.run(["git", "init"], cwd=d, check=True, capture_output=True)
+            subprocess.run(
+                ["git", "-c", "user.email=t@t", "-c", "user.name=t", "add", "a.py"],
+                cwd=d,
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "init"],
+                cwd=d,
+                check=True,
+                capture_output=True,
+            )
+            rec = TaskManager().create(
+                {
+                    "task_id": "t-replay",
+                    "workspace": d,
+                    "objective": "add hook",
+                    "files": {"allow": ["a.py"]},
+                    "test": {"command": "python3 -c 'raise SystemExit(1)'"},
+                    "execution": {"max_iterations": 8},
+                }
+            )
+            run_task(rec, client=Replay())
+            self.assertEqual(rec.status.value, "failed")
+            self.assertLess(rec.iteration, 8)
+            self.assertIn("stalled", rec.error)
+            self.assertEqual(Path(d, "a.py").read_text(), "polling\n")
 
 
 class McpApiTest(unittest.TestCase):

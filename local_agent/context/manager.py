@@ -25,7 +25,7 @@ def _candidate_files(task: Task, limit: int) -> list[str]:
     return found
 
 
-def build(task: Task, extra: str = "") -> str:
+def build(task: Task, extra: str = "", baseline_index: str = "") -> str:
     cfg = load_config().get("agent") or {}
     depth = int(cfg.get("tree_depth") or 2)
     file_limit = int(cfg.get("context_file_limit") or 12)
@@ -37,7 +37,15 @@ def build(task: Task, extra: str = "") -> str:
     ]
     if task.feedback:
         chunks.append("# Reviewer feedback\n" + "\n".join(f"- {x}" for x in task.feedback))
-    files = _candidate_files(task, file_limit)
+    files: list[str] = []
+    if baseline_index:
+        for rel in git_tools.changed_files(task.workspace, baseline_index=baseline_index):
+            if allowed_by_globs(rel, task.allow) and rel not in files:
+                files.append(rel)
+    for rel in _candidate_files(task, file_limit):
+        if rel not in files:
+            files.append(rel)
+    files = files[:file_limit]
     code = []
     for rel in files:
         try:
@@ -46,11 +54,12 @@ def build(task: Task, extra: str = "") -> str:
             continue
         code.append(f"## {rel}\n{text[:char_limit]}")
     if code:
-        chunks.append("# Relevant files\n" + "\n\n".join(code))
-    try:
-        chunks.append("# Git diff\n" + git_tools.diff(task.workspace))
-    except OSError:
-        pass
+        chunks.append("# Relevant files (current working tree)\n" + "\n\n".join(code))
+    if baseline_index:
+        names = git_tools.status(task.workspace, baseline_index=baseline_index)
+        chunks.append(
+            "# Session paths already on disk — do not re-apply these as patches\n" + names
+        )
     if extra:
         chunks.append("# Errors / last test\n" + extra[-6000:])
     return "\n\n".join(chunks)

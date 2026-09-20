@@ -23,6 +23,7 @@ class TaskRecord:
     escalate: bool = False
     cancel_event: threading.Event = field(default_factory=threading.Event)
     created_at: float = field(default_factory=time.time)
+    baseline_index: str = ""
 
 
 class TaskManager:

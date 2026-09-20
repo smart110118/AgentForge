@@ -46,22 +46,32 @@ def read_file(workspace: str, path: str, globs: list[str] | None = None) -> str:
     return target.read_text(encoding="utf-8", errors="replace")
 
 
-def write_file(workspace: str, path: str, content: str, globs: list[str] | None = None) -> str:
+def write_file(workspace: str, path: str, content: str, globs: list[str] | None = None) -> tuple[str, bool]:
     target = resolve_in_workspace(workspace, path)
     _check_allow(workspace, target, globs or [])
+    rel = relpath(workspace, target)
+    if target.is_file() and target.read_text(encoding="utf-8") == content:
+        return rel, False
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content, encoding="utf-8")
-    return relpath(workspace, target)
+    return rel, True
 
 
-def patch_file(workspace: str, path: str, old: str, new: str, globs: list[str] | None = None) -> str:
+def patch_file(workspace: str, path: str, old: str, new: str, globs: list[str] | None = None) -> tuple[str, bool]:
     target = resolve_in_workspace(workspace, path)
     _check_allow(workspace, target, globs or [])
+    rel = relpath(workspace, target)
     text = target.read_text(encoding="utf-8")
     if old not in text:
-        raise ValueError(f"old text not found in {path}")
+        if new and new in text:
+            return rel, False
+        raise ValueError(
+            f"old text not found in {path}. File already differs; read_file and edit current contents. Do not replay a git diff."
+        )
+    if old == new:
+        return rel, False
     target.write_text(text.replace(old, new, 1), encoding="utf-8")
-    return relpath(workspace, target)
+    return rel, True
 
 
 def search(workspace: str, pattern: str, globs: list[str] | None = None) -> str:

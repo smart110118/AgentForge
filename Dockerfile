@@ -7,6 +7,7 @@ RUN apt-get update \
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY local_agent ./local_agent
+COPY typesafe ./typesafe
 COPY configs ./configs
 COPY tests ./tests
 
