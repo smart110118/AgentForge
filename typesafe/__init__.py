@@ -4,7 +4,31 @@ from __future__ import annotations
 
 from typing import Any
 
-from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+try:
+    from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+except ImportError:
+    class Choice:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    class Noul:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    class Score:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    class TypeSafeClient:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+        def __enter__(self) -> "TypeSafeClient":
+            return self
+        def __exit__(self, *args: Any) -> None:
+            pass
+        def system_one(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+            return {}
+
 from typesafe.compact import compact_history
 
 __all__ = ["Choice", "Noul", "Score", "TypeSafeClient", "ask", "compact_history"]

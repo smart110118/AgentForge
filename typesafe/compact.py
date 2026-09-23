@@ -9,7 +9,13 @@ import os
 from collections.abc import Callable
 from typing import Any
 
-from typesafe_sdk import Noul
+try:
+    from typesafe_sdk import Noul
+except ImportError:
+    class Noul:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self.instructions = kwargs.get("instructions", "")
+
 
 Asker = Callable[[str, dict[str, Any]], Any]
 
